@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pointyhat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:       #F5F2EC;
+      --white:       #FFFFFF;
+      --ink:         #1A1A1A;
+      --gray:        #6B6B6B;
+      --gray-light:  #E4E0D8;
+      --gray-mid:    #3A3A3A;
+      --brown:       #8B6914;
+      --brown-light: #F0E8D5;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      padding: 20px 32px 16px;
+      border-bottom: 1px solid var(--gray-light);
+      flex-shrink: 0;
+      background: var(--cream);
+    }
+
+    .header-inner {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .wordmark {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+
+    .wordmark span { color: var(--brown); }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--gray);
+      margin-top: 2px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Content column ── */
+    #content-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 620px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+    }
+
+    /* ── Message thread ── */
+    #thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #thread::-webkit-scrollbar { width: 4px; }
+    #thread::-webkit-scrollbar-track { background: transparent; }
+    #thread::-webkit-scrollbar-thumb { background: var(--gray-light); border-radius: 2px; }
+
+    /* ── Message bubbles ── */
+    .msg { display: flex; flex-direction: column; gap: 4px; }
+    .msg.user   { align-items: flex-end; }
+    .msg.system { align-items: flex-start; }
+
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .msg.user .bubble {
+      background: var(--ink);
+      color: var(--white);
+      border-radius: 16px 16px 4px 16px;
+    }
+
+    .msg.system .bubble {
+      background: var(--white);
+      color: var(--ink);
+      border-radius: 16px 16px 16px 4px;
+      border: 1px solid var(--gray-light);
+    }
+
+    /* ── Thinking indicator ── */
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: var(--white);
+      border: 1px solid var(--gray-light);
+      border-radius: 16px 16px 16px 4px;
+      width: fit-content;
+      font-size: 13px;
+      color: var(--gray);
+    }
+
+    .dot-pulse { display: flex; gap: 3px; align-items: center; }
+    .dot-pulse span {
+      width: 5px; height: 5px;
+      background: var(--gray);
+      border-radius: 50%;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+    .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+      40%            { opacity: 1;    transform: scale(1); }
+    }
+
+    /* ── Result cards ── */
+    .results-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+
+    .hat-card {
+      border-left: 3px solid var(--brown);
+      padding: 10px 12px;
+      background: var(--white);
+      border-top: 1px solid var(--gray-light);
+      border-right: 1px solid var(--gray-light);
+      border-bottom: 1px solid var(--gray-light);
+    }
+
+    .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+
+    .retailer {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gray);
+    }
+
+    .relevance-dot { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--gray); }
+    .relevance-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gray-light); }
+    .relevance-dot.high::before   { background: #5C8A5C; }
+    .relevance-dot.medium::before { background: var(--brown); }
+    .relevance-dot.low::before    { background: #BCAAA4; }
+
+    .card-title a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      text-decoration: none;
+      line-height: 1.4;
+    }
+    .card-title a:hover { color: var(--brown); text-decoration: underline; text-underline-offset: 2px; }
+
+    .card-footer { margin-top: 5px; display: flex; align-items: center; gap: 10px; }
+    .card-price  { font-size: 12px; font-weight: 600; color: var(--gray-mid); }
+    .card-reason { font-size: 12px; color: var(--gray); line-height: 1.4; }
+
+    /* ── Reasoning drawer ── */
+    .reasoning-toggle {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--gray);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      letter-spacing: 0.03em;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-align: left;
+    }
+    .reasoning-toggle:hover { color: var(--brown); }
+
+    .reasoning-body {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--brown-light);
+      border-left: 2px solid var(--brown);
+      font-size: 12px;
+      color: var(--gray-mid);
+      line-height: 1.55;
+    }
+
+    .reasoning-meta {
+      font-size: 10px;
+      color: var(--gray);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Clarification ── */
+    .clarification-question { font-size: 14px; color: var(--ink); margin-bottom: 10px; line-height: 1.5; }
+    .clarification-options  { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .clarification-chip {
+      font-size: 13px;
+      padding: 6px 14px;
+      background: var(--white);
+      border: 1px solid var(--gray-mid);
+      border-radius: 20px;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .clarification-chip:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+    .clarification-custom { display: flex; gap: 7px; margin-top: 10px; }
+    .clarification-custom input {
+      flex: 1;
+      padding: 7px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--white);
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .clarification-custom input:focus       { border-color: var(--gray-mid); }
+    .clarification-custom input::placeholder { color: var(--gray); }
+    .clarification-custom button {
+      padding: 7px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--ink);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .clarification-custom button:hover { background: var(--gray-mid); }
+
+    /* ── Image upload ── */
+    #image-input { display: none; }
+
+    .upload-btn {
+      width: 38px; height: 38px;
+      background: var(--white);
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+      color: var(--gray);
+    }
+    .upload-btn:hover     { border-color: var(--brown); color: var(--brown); }
+    .upload-btn.has-image { border-color: var(--brown); background: var(--brown-light); color: var(--brown); }
+
+    #image-preview-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 7px 10px;
+      background: var(--brown-light);
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+    }
+    #image-preview-bar img    { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1px solid var(--gray-light); }
+    #image-preview-bar span   { flex: 1; font-size: 12px; color: var(--gray-mid); }
+    #image-preview-bar button { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 14px; padding: 0 2px; line-height: 1; }
+    #image-preview-bar button:hover { color: var(--ink); }
+
+    /* ── Outfit analysis drawer ── */
+    .outfit-toggle {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--gray);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      letter-spacing: 0.03em;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-align: left;
+    }
+    .outfit-toggle:hover { color: var(--brown); }
+
+    .outfit-body {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--brown-light);
+      border-left: 2px solid var(--brown);
+      font-size: 12px;
+      color: var(--gray-mid);
+      line-height: 1.6;
+    }
+
+    .outfit-section { margin-bottom: 8px; }
+    .outfit-label   { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gray); margin-bottom: 4px; }
+    .outfit-tags    { display: flex; flex-wrap: wrap; gap: 5px; }
+    .outfit-tag     { font-size: 11px; padding: 2px 8px; background: var(--white); border: 1px solid var(--gray-light); border-radius: 12px; color: var(--gray-mid); }
+    .outfit-query   { font-size: 12px; font-weight: 500; color: var(--ink); font-style: italic; }
+
+    /* ── Input bar ── */
+    #input-bar {
+      flex-shrink: 0;
+      padding: 14px 24px 20px;
+      border-top: 1px solid var(--gray-light);
+      background: var(--cream);
+    }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+
+    #query-input {
+      flex: 1;
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--white);
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #query-input::placeholder { color: var(--gray); }
+    #query-input:focus        { border-color: var(--gray-mid); }
+    #query-input:disabled     { opacity: 0.5; }
+
+    #send-btn {
+      width: 38px; height: 38px;
+      background: var(--ink);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    #send-btn:hover:not(:disabled) { background: var(--gray-mid); }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hint       { margin-top: 8px; font-size: 11px; color: var(--gray); }
+    .hint-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+    .chip {
+      font-size: 11px;
+      padding: 3px 9px;
+      background: var(--white);
+      border: 1px solid var(--gray-light);
+      border-radius: 20px;
+      color: var(--gray-mid);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .chip:hover { border-color: var(--brown); color: var(--brown); }
+
+    /* ── Chat image thumbnail ── */
+    .chat-image {
+      max-width: 180px;
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* ── Chat image thumbnail ── */
+    .chat-image {
+      max-width: 180px;
+      max-height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--gray);
+      gap: 8px;
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 4px; }
+    .empty-state p { font-size: 14px; max-width: 280px; line-height: 1.55; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-inner">
+        <div class="wordmark">pointy<span>hat</span></div>
+        <div class="tagline">AI-powered hat search</div>
+      </div>
+    </header>
+
+    <div id="content-col">
+      <div id="thread">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🎩</div>
+          <p>Describe the hat you're looking for and we'll find the top 3 matches across the web.</p>
+        </div>
+      </div>
+
+      <div id="input-bar">
+        <div id="image-preview-bar">
+          <img id="image-preview-thumb" src="" alt="outfit preview" />
+          <span id="image-preview-name">outfit.jpg</span>
+          <button onclick="clearImage()" title="Remove image">&#x2715;</button>
+        </div>
+        <div class="input-row">
+          <input type="file" id="image-input" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <button class="upload-btn" id="upload-btn" onclick="document.getElementById('image-input').click()" title="Upload outfit photo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 19H3a1 1 0 01-1-1V8a1 1 0 011-1h4l2-3h6l2 3h4a1 1 0 011 1v10a1 1 0 01-1 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </button>
+          <input
+            id="query-input"
+            type="text"
+            placeholder="black fitted pirates hat... or upload an outfit"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button id="send-btn" aria-label="Search">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 13V3M3 8l5-5 5 5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="hint">
+          Try:
+          <div class="hint-chips">
+            <span class="chip" onclick="setQuery(this)">gray timberwolves 9forty</span>
+            <span class="chip" onclick="setQuery(this)">pirates mascot fitted</span>
+            <span class="chip" onclick="setQuery(this)">black chicago bulls snapback</span>
+            <span class="chip" onclick="setQuery(this)">navy yankees dad hat</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /content-col -->
+  </div>
+
+  <script>
+    // PointyHat frontend
+    // Two input modes:
+    //   TEXT  -- user types a query -> optional clarification -> top 3 results
+    //   IMAGE -- user uploads outfit photo -> vision analysis -> optional clarification -> top 3 results
+    //
+    // API flow:
+    //   POST /search -> { jobId }
+    //   GET  /job/{jobId} (poll every 2s) ->
+    //     PENDING / IN_PROGRESS  -- keep polling
+    //     CLARIFICATION          -- show chips + custom input
+    //     COMPLETE               -- show outfit drawer (image jobs) + top 3 cards
+    //     FAILED                 -- show error
+    //
+    // API base URL is injected by CDK at deploy time.
+
+    const API_BASE      = '__API_BASE__';
+    const POLL_INTERVAL = 2000;
+    const POLL_TIMEOUT  = 90000;
+    const IMAGE_SIZE_WARN = 7 * 1024 * 1024; // warn if raw image > 7MB
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+    const thread       = document.getElementById('thread');
+    const input        = document.getElementById('query-input');
+    const sendBtn      = document.getElementById('send-btn');
+    const emptyState   = document.getElementById('empty-state');
+    const imageInputEl = document.getElementById('image-input');
+    const uploadBtnEl  = document.getElementById('upload-btn');
+    const previewBar   = document.getElementById('image-preview-bar');
+    const previewThumb = document.getElementById('image-preview-thumb');
+    const previewName  = document.getElementById('image-preview-name');
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let busy         = false;
+    let pendingImage = null; // { base64, mimeType, fileName } or null
+
+    // ── Image upload ──────────────────────────────────────────────────────────
+    // Encodes the selected file to base64 and stores it in pendingImage.
+    // The preview bar shows a thumbnail and filename until cleared.
+    // Max dimensions and quality for canvas compression.
+    // Target: keep base64 payload under ~1MB (~750KB raw) for fast API GW transit.
+    const COMPRESS_MAX_DIM  = 1024; // px — longest edge
+    const COMPRESS_QUALITY  = 0.82; // JPEG quality (0-1)
+    const COMPRESS_MAX_B64  = 1000000; // ~750KB raw — re-compress if still over
+
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Scale down if either dimension exceeds max
+          let w = img.width, h = img.height;
+          if (w > COMPRESS_MAX_DIM || h > COMPRESS_MAX_DIM) {
+            if (w >= h) { h = Math.round(h * COMPRESS_MAX_DIM / w); w = COMPRESS_MAX_DIM; }
+            else        { w = Math.round(w * COMPRESS_MAX_DIM / h); h = COMPRESS_MAX_DIM; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          let quality = COMPRESS_QUALITY;
+          let dataUrl = canvas.toDataURL('image/jpeg', quality);
+          // If still too large, compress harder (up to 2 extra passes)
+          let passes = 0;
+          while (dataUrl.split(',')[1].length > COMPRESS_MAX_B64 && passes < 2) {
+            quality -= 0.15;
+            dataUrl = canvas.toDataURL('image/jpeg', Math.max(quality, 0.4));
+            passes++;
+          }
+          const origKB      = Math.round(file.size / 1024);
+          const compressedKB = Math.round(dataUrl.split(',')[1].length * 0.75 / 1024);
+          console.log('Image compressed: ' + origKB + 'KB -> ' + compressedKB + 'KB (' + w + 'x' + h + ')');
+          callback(dataUrl, 'image/jpeg');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    imageInputEl.addEventListener('change', () => {
+      const file = imageInputEl.files[0];
+      if (!file) return;
+
+      compressImage(file, (dataUrl, mimeType) => {
+        pendingImage = {
+          base64:   dataUrl.split(',')[1],
+          mimeType: mimeType,
+          fileName: file.name,
+        };
+        previewThumb.src         = dataUrl;
+        previewName.textContent  = file.name + ' (compressed)';
+        previewBar.style.display = 'flex';
+        uploadBtnEl.classList.add('has-image');
+        input.placeholder = 'optional: add style context...';
+      });
+
+      imageInputEl.value = ''; // allow re-selecting same file
+    });
+
+    function clearImage() {
+      pendingImage = null;
+      previewBar.style.display = 'none';
+      previewThumb.src = '';
+      uploadBtnEl.classList.remove('has-image');
+      input.placeholder = 'black fitted pirates hat... or upload an outfit';
+    }
+
+    // ── UI helpers ────────────────────────────────────────────────────────────
+    function setQuery(el) { input.value = el.textContent.trim(); input.focus(); }
+
+    function setDisabled(val) {
+      busy = val;
+      input.disabled = val;
+      sendBtn.disabled = val;
+    }
+
+    function scrollToBottom() { thread.scrollTop = thread.scrollHeight; }
+
+    function removeEmptyState() {
+      if (emptyState && emptyState.parentNode) emptyState.parentNode.removeChild(emptyState);
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ── Message builders ──────────────────────────────────────────────────────
+    function appendUserMsg(text, imageDataUrl) {
+      removeEmptyState();
+      const msg = document.createElement('div');
+      msg.className = 'msg user';
+      let inner = '';
+      if (imageDataUrl) {
+        inner += '<img class="chat-image" src="' + imageDataUrl + '" alt="outfit" />';
+      }
+      inner += '<div class="bubble">' + escHtml(text) + '</div>';
+      msg.innerHTML = inner;
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function appendThinking() {
+      removeEmptyState();
+      const msg = document.createElement('div');
+      msg.className = 'msg system';
+      msg.id = 'thinking-msg';
+      msg.innerHTML = '<div class="thinking"><div class="dot-pulse"><span></span><span></span><span></span></div>Searching...</div>';
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function removeThinking() {
+      const el = document.getElementById('thinking-msg');
+      if (el) el.remove();
+    }
+
+    function appendError(text) {
+      const msg = document.createElement('div');
+      msg.className = 'msg system';
+      msg.innerHTML = '<div class="bubble" style="color:#B00020">' + escHtml(text) + '</div>';
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function relevanceLabel(level) {
+      return { high: 'High match', medium: 'Good match', low: 'Partial match' }[level] || level;
+    }
+
+    // ── Results ───────────────────────────────────────────────────────────────
+    function appendResults(results, reasoning) {
+      const msg = document.createElement('div');
+      msg.className = 'msg system';
+
+      const cardsHtml = results.map(r =>
+        '<div class="hat-card">' +
+          '<div class="card-meta">' +
+            '<span class="retailer">' + escHtml(r.retailer) + '</span>' +
+            '<span class="relevance-dot ' + escHtml(r.relevance) + '">' + relevanceLabel(r.relevance) + '</span>' +
+          '</div>' +
+          '<div class="card-title"><a href="' + escHtml(r.url) + '" target="_blank" rel="noopener noreferrer">' + escHtml(r.title) + '</a></div>' +
+          '<div class="card-footer">' +
+            (r.price  ? '<span class="card-price">'  + escHtml(r.price)  + '</span>' : '') +
+            (r.reason ? '<span class="card-reason">' + escHtml(r.reason) + '</span>' : '') +
+          '</div>' +
+        '</div>'
+      ).join('');
+
+      let reasoningHtml = '';
+      if (reasoning && reasoning.reasoning) {
+        const n = reasoning.candidates_evaluated || '--';
+        reasoningHtml =
+          '<button class="reasoning-toggle" onclick="toggleReasoning(this)">how we searched</button>' +
+          '<div class="reasoning-body" style="display:none">' +
+            '<div class="reasoning-meta">' + n + ' candidates evaluated - full trace in logfire</div>' +
+            escHtml(reasoning.reasoning) +
+          '</div>';
+      }
+
+      msg.innerHTML =
+        '<div class="bubble" style="max-width:100%;padding:12px 14px;">' +
+          '<div class="results-list">' + cardsHtml + '</div>' +
+          reasoningHtml +
+        '</div>';
+
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function toggleReasoning(btn) {
+      const body = btn.nextElementSibling;
+      const hidden = body.style.display === 'none';
+      body.style.display = hidden ? 'block' : 'none';
+      btn.textContent = hidden ? 'hide' : 'how we searched';
+    }
+
+    // ── Outfit analysis drawer (image jobs) ───────────────────────────────────
+    // Shows colors, style signals, and generated search query before results.
+    // Full vision reasoning lives in Logfire.
+    function appendOutfitAnalysis(ia) {
+      if (!ia || !ia.outfit_context) return;
+
+      const msg    = document.createElement('div'); msg.className = 'msg system';
+      const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.style.maxWidth = '90%';
+
+      const intro = document.createElement('div');
+      intro.style.cssText = 'font-size:13px;color:var(--ink);margin-bottom:8px;';
+      intro.textContent = 'Outfit detected - here is what we saw:';
+      bubble.appendChild(intro);
+
+      // Vision reasoning drawer — sits above the chips
+      // Shows hat suggestion rationale; full trace in Logfire
+      if (ia.reasoning) {
+        var rToggle = document.createElement('button');
+        rToggle.className = 'reasoning-toggle';
+        rToggle.textContent = 'why these suggestions';
+        bubble.appendChild(rToggle);
+        var rBody = document.createElement('div');
+        rBody.className = 'reasoning-body';
+        rBody.style.display = 'none';
+        rBody.innerHTML = '<div class="reasoning-meta">vision analysis - full trace in logfire</div>' + escHtml(ia.reasoning);
+        rToggle.addEventListener('click', function() {
+          var hidden = rBody.style.display === 'none';
+          rBody.style.display = hidden ? 'block' : 'none';
+          rToggle.textContent = hidden ? 'hide' : 'why these suggestions';
+        });
+        bubble.appendChild(rBody);
+      }
+
+      const toggle = document.createElement('button');
+      toggle.className = 'outfit-toggle';
+      toggle.textContent = 'what we saw in your outfit';
+      bubble.appendChild(toggle);
+
+      const body = document.createElement('div');
+      body.className = 'outfit-body';
+      body.style.display = 'none';
+
+      function makeTagSection(label, items) {
+        if (!items || !items.length) return;
+        const sec  = document.createElement('div'); sec.className = 'outfit-section';
+        const lbl  = document.createElement('div'); lbl.className = 'outfit-label'; lbl.textContent = label;
+        const tags = document.createElement('div'); tags.className = 'outfit-tags';
+        items.forEach(item => {
+          const t = document.createElement('span'); t.className = 'outfit-tag'; t.textContent = item; tags.appendChild(t);
+        });
+        sec.appendChild(lbl); sec.appendChild(tags); body.appendChild(sec);
+      }
+
+      makeTagSection('Colors detected', ia.colors);
+      makeTagSection('Style signals',   ia.style_signals);
+
+      if (ia.hat_suggestions && ia.hat_suggestions.length) {
+        var hsec = document.createElement('div'); hsec.className = 'outfit-section';
+        var hlbl = document.createElement('div'); hlbl.className = 'outfit-label'; hlbl.textContent = 'Hat styles suggested';
+        var htags = document.createElement('div'); htags.className = 'outfit-tags';
+        ia.hat_suggestions.forEach(function(s) {
+          var t = document.createElement('span'); t.className = 'outfit-tag'; t.textContent = s; htags.appendChild(t);
+        });
+        hsec.appendChild(hlbl); hsec.appendChild(htags); body.appendChild(hsec);
+      }
+
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11px;color:var(--gray);margin-top:6px;';
+      note.textContent = 'full reasoning in logfire';
+      body.appendChild(note);
+
+      toggle.addEventListener('click', () => {
+        const hidden = body.style.display === 'none';
+        body.style.display = hidden ? 'block' : 'none';
+        toggle.textContent = hidden ? 'hide' : 'what we saw in your outfit';
+      });
+
+      bubble.appendChild(body);
+      msg.appendChild(bubble);
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    // ── Clarification ─────────────────────────────────────────────────────────
+    // Used by both text and image paths.
+    // isImageJob + pendingImg are passed through so the image can be resubmitted
+    // after the user answers the clarifying question.
+    function appendClarification(originalQuery, clarification, currentRefinedQuery, isImageJob, pendingImg, imageAnalysis, jobId) {
+      if (!clarification) return;
+      const currentRefined = currentRefinedQuery || originalQuery;
+
+      const msg    = document.createElement('div'); msg.className = 'msg system';
+      const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.style.maxWidth = '90%';
+
+      const question = document.createElement('div');
+      question.className = 'clarification-question';
+      question.textContent = clarification.question;
+      bubble.appendChild(question);
+
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'clarification-options';
+
+      (clarification.options || []).forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'clarification-chip';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => submitClarification(originalQuery, currentRefined, opt, isImageJob, pendingImg, imageAnalysis, jobId));
+        optionsDiv.appendChild(btn);
+      });
+      bubble.appendChild(optionsDiv);
+
+      // Custom free-text input below the chips
+      const customRow   = document.createElement('div');   customRow.className = 'clarification-custom';
+      const customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'or describe what you want...';
+      const customBtn   = document.createElement('button'); customBtn.textContent = 'Search';
+
+      const submitCustom = () => {
+        const val = customInput.value.trim();
+        if (!val) return;
+        submitClarification(originalQuery, currentRefined, val, isImageJob, pendingImg, imageAnalysis, jobId);
+      };
+      customBtn.addEventListener('click', submitCustom);
+      customInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitCustom(); } });
+
+      customRow.appendChild(customInput);
+      customRow.appendChild(customBtn);
+      bubble.appendChild(customRow);
+
+      msg.appendChild(bubble);
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+    // appendImageClarification — image path only
+    // Single merged bubble: question + chips + custom input + collapsed outfit details
+    // Replaces the old two-bubble flow (appendOutfitAnalysis + appendClarification).
+    function appendImageClarification(clarification, ia, pendingImg) {
+      if (!clarification || !ia) return;
+
+      var msg    = document.createElement('div'); msg.className = 'msg system';
+      var bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.style.maxWidth = '92%';
+
+      // ── Question text ──
+      var question = document.createElement('div');
+      question.style.cssText = 'font-size:14px;color:var(--ink);margin-bottom:12px;line-height:1.5;';
+      question.textContent = clarification.question || ia.question || '';
+      bubble.appendChild(question);
+
+      // ── Chips ──
+      var optionsDiv = document.createElement('div'); optionsDiv.className = 'clarification-options';
+      (clarification.options || []).forEach(function(opt) {
+        var btn = document.createElement('button'); btn.className = 'clarification-chip'; btn.textContent = opt;
+        btn.addEventListener('click', function() { submitClarification('', '', opt, true, pendingImg, ia, ia._jobId || ''); });
+        optionsDiv.appendChild(btn);
+      });
+      bubble.appendChild(optionsDiv);
+
+      // ── Custom input ──
+      var customRow   = document.createElement('div');   customRow.className = 'clarification-custom';
+      var customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'or describe what you want...';
+      var customBtn   = document.createElement('button'); customBtn.textContent = 'Search';
+      var submitCustom = function() {
+        var val = customInput.value.trim();
+        if (!val) return;
+        submitClarification('', '', val, true, pendingImg, ia, ia._jobId || '');
+      };
+      customBtn.addEventListener('click', submitCustom);
+      customInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitCustom(); } });
+      customRow.appendChild(customInput); customRow.appendChild(customBtn);
+      bubble.appendChild(customRow);
+
+      // ── "what we saw" collapsed drawer ──
+      var toggle = document.createElement('button'); toggle.className = 'outfit-toggle';
+      toggle.style.marginTop = '12px';
+      toggle.textContent = 'what we saw';
+      bubble.appendChild(toggle);
+
+      var drawer = document.createElement('div'); drawer.className = 'outfit-body'; drawer.style.display = 'none';
+
+      function makeTagSection(label, items) {
+        if (!items || !items.length) return;
+        var sec  = document.createElement('div'); sec.className = 'outfit-section';
+        var lbl  = document.createElement('div'); lbl.className = 'outfit-label'; lbl.textContent = label;
+        var tags = document.createElement('div'); tags.className = 'outfit-tags';
+        items.forEach(function(item) {
+          var t = document.createElement('span'); t.className = 'outfit-tag'; t.textContent = item; tags.appendChild(t);
+        });
+        sec.appendChild(lbl); sec.appendChild(tags); drawer.appendChild(sec);
+      }
+
+      makeTagSection('Colors', ia.colors);
+      makeTagSection('Vibes', ia.style_signals);
+      makeTagSection('Hat styles suggested', ia.hat_suggestions);
+
+      // nested "why these suggestions" reasoning collapse
+      if (ia.reasoning) {
+        var rToggle = document.createElement('button'); rToggle.className = 'reasoning-toggle';
+        rToggle.style.marginTop = '6px';
+        rToggle.textContent = 'why these suggestions';
+        drawer.appendChild(rToggle);
+
+        var rBody = document.createElement('div'); rBody.className = 'reasoning-body'; rBody.style.display = 'none';
+        rBody.innerHTML = '<div class="reasoning-meta">vision analysis - full trace in logfire</div>' + escHtml(ia.reasoning);
+        rToggle.addEventListener('click', function() {
+          var hidden = rBody.style.display === 'none';
+          rBody.style.display = hidden ? 'block' : 'none';
+          rToggle.textContent = hidden ? 'hide' : 'why these suggestions';
+        });
+        drawer.appendChild(rBody);
+      }
+
+      toggle.addEventListener('click', function() {
+        var hidden = drawer.style.display === 'none';
+        drawer.style.display = hidden ? 'block' : 'none';
+        toggle.textContent = hidden ? 'hide' : 'what we saw';
+      });
+
+      bubble.appendChild(drawer);
+      msg.appendChild(bubble);
+      thread.appendChild(msg);
+      scrollToBottom();
+    }
+
+        function submitClarification(originalQuery, currentRefined, choice, isImageJob, pendingImg, imageAnalysis, jobId) {
+      var refined;
+      if (isImageJob && imageAnalysis) {
+        // Build query: suggested_hat_color (aesthetic complement) + user's chosen style
+        // e.g. suggested_hat_color='charcoal' + choice='Fedora' -> 'charcoal fedora'
+        var hatColor = (imageAnalysis.suggested_hat_color || '').toLowerCase();
+        var skipWords = ['something else', "doesn't matter", 'other'];
+        refined = skipWords.indexOf(choice.toLowerCase()) !== -1
+          ? hatColor + ' hat'
+          : hatColor + ' ' + choice.toLowerCase();
+        refined = refined.trim();
+      } else {
+        refined = (choice === "Doesn't matter") ? currentRefined : (currentRefined + ' ' + choice.toLowerCase());
+      }
+      appendUserMsg(choice);
+      if (isImageJob && imageAnalysis && jobId) {
+        // image path — POST /resume with jobId + choice + imageAnalysis
+        // resumeJob reads taskToken, calls SendTaskSuccess, SF resumes at HackSearch
+        runImageSearchRefined(jobId, choice, imageAnalysis);
+      } else if (isImageJob && imageAnalysis && !jobId) {
+        // fallback — no jobId means something went wrong, log and show error
+        console.error('Image clarification missing jobId — cannot resume SF execution');
+        appendError('Something went wrong resuming your search. Please try again.');
+        setDisabled(false);
+      } else {
+        setDisabled(true);
+        runSearch(originalQuery, refined, true, jobId);
+      }
+    }
+
+    // ── Entry point ───────────────────────────────────────────────────────────
+    // Routes to image or text path based on whether pendingImage is set.
+    function submitQuery() {
+      const query = input.value.trim();
+      if (!query && !pendingImage) return;
+      if (busy) return;
+
+      setDisabled(true);
+
+      if (pendingImage) {
+        const contextNote = query ? ' (context: "' + query + '")' : '';
+        const previewDataUrl = previewThumb.src; // capture before clearImage wipes it
+        appendUserMsg('Outfit uploaded' + contextNote, previewDataUrl);
+        const img = pendingImage;
+        clearImage();
+        input.value = '';
+        runImageSearch(img, query);
+      } else {
+        input.value = '';
+        appendUserMsg(query);
+        runSearch(query, query, false);
+      }
+    }
+
+    // ── Image search ──────────────────────────────────────────────────────────
+    // Initial image submission -- vision agent runs, then ambiguity check.
+    function runImageSearch(img, contextQuery) {
+      appendThinking();
+      fetch(API_BASE + '/search', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobType:       'image',
+          imageBase64:   img.base64,
+          imageMimeType: img.mimeType,
+          query:         contextQuery || '',
+          isRefined:     false,
+        }),
+      })
+      .then(res => { if (!res.ok) throw new Error('Search failed (' + res.status + ')'); return res.json(); })
+      .then(data => pollJob(data.jobId, true, img, ''))
+      .catch(err  => { removeThinking(); appendError(err.message || 'Something went wrong.'); })
+      .finally(() => { setDisabled(false); input.focus(); });
+    }
+
+    // Refined image submission -- called after user answers clarification.
+    // Skips vision agent and ambiguity check (isRefined: true).
+    // runImageSearchRefined — called after user picks a chip on image job
+    // POSTs to /resume with jobId + choice + imageAnalysis
+    // resumeJob Lambda reads taskToken, calls SendTaskSuccess, SF resumes
+    // runImageSearchRefined — resumes existing SF execution via /resume
+    // stays disabled until pollJob resolves to prevent double submission
+    function runImageSearchRefined(jobId, choice, imageAnalysis) {
+      setDisabled(true);
+      appendThinking();
+      fetch(API_BASE + '/resume', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId:         jobId,
+          choice:        choice,
+          imageAnalysis: imageAnalysis,
+        }),
+      })
+      .then(res => { if (!res.ok) throw new Error('Resume failed (' + res.status + ')'); return res.json(); })
+      .then(data => pollJob(data.jobId, false, null, ''))
+      .then(() => { setDisabled(false); input.focus(); })
+      .catch(err => { removeThinking(); appendError(err.message || 'Something went wrong.'); setDisabled(false); input.focus(); });
+    }
+
+    // ── Text search ───────────────────────────────────────────────────────────
+    // runSearch — text path
+    // First submission: POST /search to start SF execution
+    // Refined (after clarification): POST /resume to resume paused SF execution
+    function runSearch(originalQuery, refinedQuery, isRefined, jobId) {
+      appendThinking();
+      if (isRefined && jobId) {
+        // Text clarification answered — resume existing SF execution
+        fetch(API_BASE + '/resume', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: jobId, choice: refinedQuery }),
+        })
+        .then(res => { if (!res.ok) throw new Error('Resume failed (' + res.status + ')'); return res.json(); })
+        .then(data => pollJob(data.jobId, false, null, originalQuery))
+        .then(() => { setDisabled(false); input.focus(); })
+        .catch(err => { removeThinking(); appendError(err.message || 'Something went wrong.'); setDisabled(false); input.focus(); });
+      } else {
+        // Fresh text search — start new SF execution
+        fetch(API_BASE + '/search', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: originalQuery, refinedQuery: refinedQuery, isRefined: false }),
+        })
+        .then(res => { if (!res.ok) throw new Error('Search failed (' + res.status + ')'); return res.json(); })
+        .then(data => pollJob(data.jobId, false, null, originalQuery))
+        .catch(err  => { removeThinking(); appendError(err.message || 'Something went wrong.'); })
+        .finally(() => { setDisabled(false); input.focus(); });
+      }
+    }
+
+    // ── Shared job poller ─────────────────────────────────────────────────────
+    // Polls GET /job/{jobId} every POLL_INTERVAL ms.
+    // Handles COMPLETE, CLARIFICATION, FAILED, and keeps polling on PENDING/IN_PROGRESS.
+    // pollJob — returns a Promise that resolves on terminal states
+    // (COMPLETE, CLARIFICATION, FAILED) so callers can chain .then()
+    // to re-enable the UI only after polling is fully done
+    function pollJob(jobId, isImageJob, img, originalQuery) {
+      return new Promise(function(resolve, reject) {
+        const started = Date.now();
+        function poll() {
+          if (Date.now() - started > POLL_TIMEOUT) {
+            removeThinking();
+            appendError('Search timed out - please try again.');
+            resolve(); // resolve so finally/then still runs
+            return;
+          }
+          setTimeout(() => {
+            fetch(API_BASE + '/job/' + jobId)
+            .then(res => { if (!res.ok) throw new Error('Poll failed (' + res.status + ')'); return res.json(); })
+            .then(data => {
+              if (data.status === 'COMPLETE') {
+                removeThinking();
+                if (!data.results || !data.results.length) {
+                  appendError('No hats found. Try a different query or photo.');
+                } else {
+                  appendResults(data.results, data.reasoning);
+                }
+                resolve();
+              } else if (data.status === 'CLARIFICATION') {
+                removeThinking();
+                const orig = originalQuery || data.refined_query || '';
+                if (isImageJob && data.image_analysis) {
+                  data.image_analysis._jobId = jobId;
+                  appendImageClarification(data.clarification, data.image_analysis, img);
+                } else {
+                  appendClarification(orig, data.clarification, data.refined_query, false, null, null, jobId);
+                }
+                // resolve here — UI re-enables so user can answer chips
+                resolve();
+              } else if (data.status === 'FAILED') {
+                removeThinking();
+                appendError(data.error || 'Search failed.');
+                resolve();
+              } else {
+                poll(); // PENDING or IN_PROGRESS -- keep polling
+              }
+            })
+            .catch(err => { removeThinking(); appendError(err.message || 'Poll error.'); reject(err); });
+          }, POLL_INTERVAL);
+        }
+        poll();
+      });
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    sendBtn.addEventListener('click', submitQuery);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQuery(); }
+    });
+  </script>
+</body>
+</html>
