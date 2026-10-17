@@ -2,7 +2,7 @@
 
 AI-powered hat search built on AWS. Upload an outfit photo or describe what you're looking for — PointyHat finds the top 3 matching hats across the web.
 
-> Developed in June 2026 as a proof-of-concept at the University of Pittsburgh Cloud Innovation Center (CIC), powered by AWS. Made public October 2026.
+> Developed in June 2026 as a proof-of-concept personal project, powered by the AWS CIC. Made public October 2026.
 
 ---
 
